@@ -58,7 +58,9 @@ interface Ctx {
   exitOpen: boolean;
   setExitOpen: (o: boolean) => void;
 }
-const SessionCtx = createContext<Ctx | null>(null);
+// Keep one context instance across hot reloads so provider and consumers always match.
+const g = globalThis as unknown as { __tremorSessionCtx?: React.Context<Ctx | null> };
+const SessionCtx = (g.__tremorSessionCtx ??= createContext<Ctx | null>(null));
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [screen, setScreen] = useState<Screen>("welcome");
