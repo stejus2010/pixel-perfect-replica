@@ -48,6 +48,8 @@ All **provisional**, comparison "at or above" (score equal to threshold counts a
 Referral rule (`REFERRAL_RULE`): ≥3 crossings → "Multiple screening thresholds crossed". Fewer than 3 valid tests without 3 crossings → "Screening incomplete". Otherwise "Fewer screening thresholds crossed". Tests with missing data or failed quality are "Unable to assess" and never counted as normal. `ageBands` exist per test but are empty — no compatible age-specific data.
 
 ## Reference datasets — status
+Results and PDF include **fictional demo normal scores**: Hand Hold 20/100, Voice 25/100, Spiral 20/100, Tap 25/100. These are made-up illustrative values, calculated from the simulated control profile through the scoring pipeline. They are not validated healthy-population averages, never populate reference datasets, and do not affect thresholds or referral decisions. Comparison content is shared through `interpretation.ts`.
+
 Candidate sources listed in `thresholds.ts` (Zenodo 7273759, UCI 489 voice, UCI 395 spiral, ETF finger-tapping DB) have **not been downloaded or analysed**. Their measurements are not yet mapped to Tremor's features, so no research-derived cutoffs are applied. Next step: extract Tremor-equivalent features from each dataset, derive cutoffs (e.g. control mean + 2 SD, checking distribution and n), and set `status: "research_derived"`.
 
 ## Known limitations

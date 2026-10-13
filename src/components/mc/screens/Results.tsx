@@ -11,7 +11,7 @@ import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL
 import { analyzeSpiral } from "@/mc/spiral";
 import { analyzeTap } from "@/mc/tap";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "@/mc/context";
-import { compareWithReference, nextStepFor, normalScoreComparison, NORMAL_SCORE_NOTE, NORMAL_SCORE_TITLE, NORMAL_SCORE_UNAVAILABLE, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS, type ReferenceComparison } from "@/mc/interpretation";
+import { compareWithReference, nextStepFor, normalScoreComparison, NORMAL_SCORE_COLUMN, NORMAL_SCORE_NOTE, NORMAL_SCORE_TITLE, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS, type ReferenceComparison } from "@/mc/interpretation";
 import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, STATUS_TEXT } from "@/mc/thresholds";
 import { DEMO_PROFILES } from "@/mc/demoProfiles";
 import { fmtValue, QUALITY_LABEL, TEST_NAMES, type TestResult } from "@/mc/types";
@@ -219,14 +219,13 @@ function NormalScoreComparison({ tests }: { tests: TestScore[] }) {
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-muted-foreground">
-            <tr><th scope="col" className="py-3 pr-4">Test</th><th scope="col" className="py-3 pr-4">Your score</th><th scope="col" className="py-3 pr-4">Validated normal score</th><th scope="col" className="py-3">Simulated control-like example</th></tr>
+            <tr><th scope="col" className="py-3 pr-4">Test</th><th scope="col" className="py-3 pr-4">Your score</th><th scope="col" className="py-3">{NORMAL_SCORE_COLUMN}</th></tr>
           </thead>
           <tbody>{normalScoreComparison(tests).map((row) => (
             <tr key={row.id} className="border-b border-border">
               <th scope="row" className="py-3 pr-4 font-medium">{row.name}</th>
               <td className="py-3 pr-4 font-num">{fmtScore(row.score)}</td>
-              <td className="py-3 pr-4 text-muted-foreground">{NORMAL_SCORE_UNAVAILABLE}</td>
-              <td className="py-3 font-num">{fmtScore(row.exampleScore)}</td>
+              <td className="py-3 font-num">{fmtScore(row.normalScore)}</td>
             </tr>
           ))}</tbody>
         </table>

@@ -5,14 +5,14 @@
  * REFERENCE DATA POLICY: Tremor ships no validated reference dataset that matches its own
  * protocol, device and population. Every comparison therefore resolves to an explicit
  * "unavailable" state. To add one, put a documented entry in REFERENCE_DATASETS — never
- * invent "normal person" values, and only compare metrics with the same unit and protocol.
+ * treat fictional demo normal scores as validated norms, and only compare metrics with the same unit and protocol.
  */
 import { assessResults, SCORING_REFERENCE, type ScoredTestId, type TestScore } from "./scoring";
 import { demoResults } from "./demoProfiles";
 
-export const NORMAL_SCORE_TITLE = "Your score vs a normal-person reference";
-export const NORMAL_SCORE_NOTE = "There is no validated normal-person score for this prototype. Healthy people's results vary with age, technique and device. The control-like example below is simulated, not a healthy population average or a target score.";
-export const NORMAL_SCORE_UNAVAILABLE = "Not established";
+export const NORMAL_SCORE_TITLE = "Your score vs demo normal scores";
+export const NORMAL_SCORE_NOTE = "FICTIONAL DEMO REFERENCE — these made-up normal scores illustrate the comparison only. They are not measured healthy-person averages, medically validated norms or target scores, and do not affect the screening outcome.";
+export const NORMAL_SCORE_COLUMN = "Normal score (fictional demo)";
 
 /** Illustrative comparator only; never used by screening or reference datasets. */
 export function normalScoreComparison(tests: TestScore[]) {
@@ -21,8 +21,7 @@ export function normalScoreComparison(tests: TestScore[]) {
     id: t.id,
     name: t.name,
     score: t.eligible ? t.score : null,
-    normalScore: null,
-    exampleScore: example.tests.find((e) => e.id === t.id)?.score ?? null,
+    normalScore: example.tests.find((e) => e.id === t.id)?.score ?? null,
   }));
 }
 

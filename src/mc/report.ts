@@ -1,7 +1,7 @@
 import { LIMITATIONS, type Summary } from "./quality";
 import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL_DISCLAIMER } from "./scoring";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "./context";
-import { compareWithReference, nextStepFor, normalScoreComparison, NORMAL_SCORE_NOTE, NORMAL_SCORE_TITLE, NORMAL_SCORE_UNAVAILABLE, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS } from "./interpretation";
+import { compareWithReference, nextStepFor, normalScoreComparison, NORMAL_SCORE_COLUMN, NORMAL_SCORE_NOTE, NORMAL_SCORE_TITLE, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS } from "./interpretation";
 import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, REFERRAL_RULE, STATUS_TEXT, THRESHOLDS } from "./thresholds";
 import { DEMO_PROFILES, type DemoProfileId } from "./demoProfiles";
 import { fmtValue, QUALITY_LABEL, type TestResult } from "./types";
@@ -86,7 +86,7 @@ export async function buildReportPdf(r: ReportInput): Promise<Blob> {
   normalScoreComparison(A.tests).forEach((row) => {
     ensure(17);
     text(`${row.name} | Your score: ${fmtScore(row.score)}`, 10, true);
-    text(`Validated normal score: ${NORMAL_SCORE_UNAVAILABLE} | Simulated control-like example: ${fmtScore(row.exampleScore)}`, 9);
+    text(`${NORMAL_SCORE_COLUMN}: ${fmtScore(row.normalScore)}`, 9);
   });
   text("Matching the example does not establish health; differing from it does not establish disease. All scores use each test's experimental 0-100 scale.", 9, false, muted);
   y += 3;
