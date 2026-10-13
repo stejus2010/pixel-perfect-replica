@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import type { AssessmentContext } from "./context";
 import type { VoiceFrame } from "./audio";
 import type { MotionSample } from "./motion";
-import type { Summary } from "./quality";
+import { summarize, type Summary } from "./quality";
+import { DEMO_PROFILES, demoResults, type DemoProfileId } from "./demoProfiles";
 import { buildReportPdf } from "./report";
 import type { SpiralPoint } from "./spiral";
 import type { TapEvent } from "./tap";
@@ -30,6 +31,7 @@ export interface Session {
   results: TestResult[] | null;
   summary: Summary | null;
   pdf: Blob | null;
+  demoProfile?: DemoProfileId | undefined;
 }
 
 const emptyRaw = (): Raw => ({ rest: null, arm: null, voice: null, spiral: null, tap: null });
@@ -52,6 +54,7 @@ interface Ctx {
   skip: (k: TestId) => void;
   setAnalysis: (results: TestResult[], summary: Summary, pdf: Blob | null) => void;
   downloadPdf: () => Promise<void>;
+  loadDemoProfile: (p: DemoProfileId) => void;
   exitOpen: boolean;
   setExitOpen: (o: boolean) => void;
 }
@@ -85,7 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     downloadPdf: async () => {
       let blob = session.pdf;
       if (!blob && session.results && session.summary) {
-        blob = await buildReportPdf({ id: session.id, startedAt: session.startedAt, demo: session.demo, context: session.context, results: session.results, summary: session.summary });
+        blob = await buildReportPdf({ id: session.id, startedAt: session.startedAt, demo: session.demo, context: session.context, results: session.results, summary: session.summary, demoProfile: session.demoProfile });
         setSession((s) => ({ ...s, pdf: blob }));
       }
       if (!blob) return;

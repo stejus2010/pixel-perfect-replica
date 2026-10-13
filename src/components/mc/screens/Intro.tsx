@@ -1,3 +1,4 @@
+import { DEMO_PROFILES, type DemoProfileId } from "@/mc/demoProfiles";
 import { Activity, ArrowRight, Clock, FileText, Hand, Mic, MousePointerClick, ShieldCheck, Spline } from "lucide-react";
 import figure from "@/assets/motion-figure.jpg";
 import { useSession } from "@/mc/session";
