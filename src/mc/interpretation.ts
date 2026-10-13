@@ -7,7 +7,24 @@
  * "unavailable" state. To add one, put a documented entry in REFERENCE_DATASETS — never
  * invent "normal person" values, and only compare metrics with the same unit and protocol.
  */
-import { SCORING_REFERENCE, type ScoredTestId, type TestScore } from "./scoring";
+import { assessResults, SCORING_REFERENCE, type ScoredTestId, type TestScore } from "./scoring";
+import { demoResults } from "./demoProfiles";
+
+export const NORMAL_SCORE_TITLE = "Your score vs a normal-person reference";
+export const NORMAL_SCORE_NOTE = "There is no validated normal-person score for this prototype. Healthy people's results vary with age, technique and device. The control-like example below is simulated, not a healthy population average or a target score.";
+export const NORMAL_SCORE_UNAVAILABLE = "Not established";
+
+/** Illustrative comparator only; never used by screening or reference datasets. */
+export function normalScoreComparison(tests: TestScore[]) {
+  const example = assessResults(demoResults("control"));
+  return tests.map((t) => ({
+    id: t.id,
+    name: t.name,
+    score: t.eligible ? t.score : null,
+    normalScore: null,
+    exampleScore: example.tests.find((e) => e.id === t.id)?.score ?? null,
+  }));
+}
 
 export interface ReferenceDataset {
   /** Must match a FeatureUsed label and unit exactly. */
