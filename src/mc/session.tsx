@@ -77,6 +77,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setRaw: (k, v) => setSession((s) => ({ ...s, raw: { ...s.raw, [k]: v }, skipped: { ...s.skipped, [k]: false } })),
     skip: (k) => setSession((s) => ({ ...s, raw: { ...s.raw, [k]: null }, skipped: { ...s.skipped, [k]: true } })),
     setAnalysis: (results, summary, pdf) => setSession((s) => ({ ...s, results, summary, pdf })),
+    loadDemoProfile: (p) => {
+      const results = demoResults(p);
+      setSession({ ...blank(true), id: newId(), startedAt: new Date(), context: DEMO_PROFILES[p].context, results, summary: summarize(results), demoProfile: p });
+      go("results");
+    },
     downloadPdf: async () => {
       let blob = session.pdf;
       if (!blob && session.results && session.summary) {
