@@ -12,6 +12,8 @@ import { analyzeSpiral } from "@/mc/spiral";
 import { analyzeTap } from "@/mc/tap";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "@/mc/context";
 import { compareWithReference, nextStepFor, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS, type ReferenceComparison } from "@/mc/interpretation";
+import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, STATUS_TEXT } from "@/mc/thresholds";
+import { DEMO_PROFILES } from "@/mc/demoProfiles";
 import { fmtValue, QUALITY_LABEL, TEST_NAMES, type TestResult } from "@/mc/types";
 import { Btn, Card, MetricRow, Notice, Page, QualityBadge, Sparkline, Stepper, TopBar } from "../ui";
 
@@ -211,60 +213,91 @@ function Understanding({ tests, age }: { tests: TestScore[]; age: number | null 
 
 export function ResultsScreen() {
   const s = useSession();
-  const { results, summary, startedAt, demo, context } = s.session;
+  const { results, summary, startedAt, demo, context, demoProfile } = s.session;
   if (!results || !summary) return null;
   const a = assessResults(results);
+  const o = evaluateScreening(a.tests, context?.age ?? null);
+  const quality = a.tests.flatMap((t) => [
+    ...(t.exclusion ? [`${t.name}: ${EXCLUSION_TEXT[t.exclusion]}.`] : []),
+    ...(t.quality === "limited" ? [`${t.name}: limited data quality — interpret with caution.`] : []),
+    ...t.warnings.map((w) => `${t.name}: ${w}`),
+  ]);
+  const crossedList = o.evaluations.filter((e) => e.status === "crossed");
   return (
     <Page>
-      <TopBar exit={false} right={<><Btn variant="ghost" onClick={() => s.start()}><RotateCcw className="h-4 w-4" /> New Assessment</Btn><DownloadBtn /></>} />
-      <Stepper current={5} />
+      <TopBar exit={false} right={<DownloadBtn />} />
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-        <h1 className="text-3xl font-bold">Your Results</h1>
+        <h1 className="text-3xl font-bold">Screening Results</h1>
         <span className="font-num text-sm text-muted-foreground">{startedAt.toLocaleString()}</span>
       </div>
-      {demo && <Notice tone="warning" className="mt-4"><b>Demonstration data.</b> These results are generated from synthetic data and are not real measurements. They do not imply clinical validation.</Notice>}
+      {demo && <Notice tone="warning" className="mt-4"><b>SIMULATED DEMO DATA</b>{demoProfile ? ` — ${DEMO_PROFILES[demoProfile].label}` : ""}. Illustrative values, not real measurements.</Notice>}
 
-      <Card className={cn("mt-5 border-2", a.status === "complete" ? "border-blue/50" : "border-warning/50")}>
-        <div className="flex flex-wrap items-start justify-between gap-6">
+      {/* 1–2. Overall outcome + count */}
+      <Card className={cn("mt-5 border-2", o.kind === "referral" ? "border-destructive/60" : o.kind === "incomplete" ? "border-warning/60" : "border-blue/50")}>
+        <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0 flex-1">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Tremor · Assessment Summary</div>
-            <h2 className="mt-1 flex items-center gap-2 text-2xl font-bold">{a.status === "complete" ? <Check className="h-6 w-6 text-cyan" /> : <AlertTriangle className="h-6 w-6 text-warning" />}Status: {a.statusLabel}</h2>
-            <p className="mt-2 text-muted-foreground">{a.interpretation}</p>
-            <p className="mt-2 text-sm">Tests included: <b className="font-num">{a.eligibleCount} of {a.totalCount}</b>{a.retest.length > 0 && <> · <span className="text-warning">{a.retest.length} {a.retest.length === 1 ? "test requires" : "tests require"} a retest.</span></>}</p>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Overall screening outcome</div>
+            <h2 className={cn("mt-1 flex items-center gap-2 text-3xl font-bold", o.kind === "referral" && "text-destructive")}>
+              {o.kind === "referral" ? <AlertTriangle className="h-7 w-7" /> : o.kind === "incomplete" ? <CircleDashed className="h-7 w-7 text-warning" /> : <Check className="h-7 w-7 text-cyan" />}
+              {o.title}
+            </h2>
+            <p className="mt-3 text-lg">{o.message}</p>
           </div>
-          <div className="text-right">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{SCORE_LABEL}</div>
-            <div className="font-num text-6xl font-bold">{a.average != null ? <>{Math.round(a.average)}<span className="text-2xl font-normal text-muted-foreground">/100</span></> : <span className="text-2xl">Insufficient data</span>}</div>
-            {a.average != null && a.status === "incomplete" && <div className="text-sm text-warning">Partial average — assessment incomplete</div>}
+          <div className="text-center">
+            <div className="font-num text-6xl font-bold">{o.crossed}<span className="text-3xl font-normal text-muted-foreground"> of {o.assessed}</span></div>
+            <div className="text-sm text-muted-foreground">thresholds crossed · {o.assessed}/{o.total} tests assessed</div>
           </div>
         </div>
-        {a.excluded.length > 0 && (
-          <div className="mt-4 border-t border-border pt-3 text-sm">
-            <div className="font-semibold">Excluded from the average</div>
-            <ul className="mt-1 space-y-0.5 text-muted-foreground">{a.excluded.map((t) => <li key={t.id}>• {t.name}: {t.exclusion && EXCLUSION_TEXT[t.exclusion]}</li>)}</ul>
-          </div>
-        )}
-        <p className="mt-3 text-xs text-muted-foreground">0 = lower measured deviation or variability, 100 = higher. A low score does not mean you are healthy; a high score does not mean you have a disease. Not a Parkinson's risk score or probability.</p>
+        <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">{EXPERIMENTAL_NOTE}</p>
       </Card>
-      <ContextCard c={context} />
+      {context && <p className="mt-3 text-sm text-muted-foreground">Age {context.age} · {caffeineSummary(context)}. Thresholds are not age-adjusted (no compatible age-specific reference data).</p>}
 
-      <h2 className="mt-8 text-xl font-semibold">Individual Test Results</h2>
+      {/* 3. Test cards */}
+      <h2 className="mt-8 text-xl font-semibold">Individual Tests</h2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {a.tests.map((t) => <TestScoreCard key={t.id} t={t} />)}
+        {o.evaluations.map((e) => {
+          const t = a.tests.find((x) => x.id === e.id)!;
+          return (
+            <Card key={e.id} className={cn("flex flex-col border-2", e.status === "crossed" ? "border-destructive/50" : e.status === "unable" ? "border-warning/50" : "border-transparent")}>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{e.name}</div>
+              <div className="mt-2 font-num text-4xl font-bold">{e.score != null ? <>{Math.round(e.score)}<span className="text-base font-normal text-muted-foreground">/100</span></> : <span className="text-lg">No score</span>}</div>
+              <div className="mt-2"><ScoreBar value={e.score} /></div>
+              <div className="mt-2 text-sm">Threshold <b className="font-num">{e.threshold}</b> · <span className="text-muted-foreground">{COMPARISON_TEXT[e.comparison].toLowerCase()}</span></div>
+              <div className={cn("mt-2 inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold", e.status === "crossed" ? "bg-destructive/15 text-destructive" : e.status === "unable" ? "bg-warning/15 text-warning" : "bg-muted text-foreground")}>{CROSSING_TEXT[e.status]}</div>
+              <p className="mt-3 text-xs text-muted-foreground">{t.featureDescription}</p>
+              {t.features.map((f) => <div key={f.label} className="mt-1 text-xs text-muted-foreground">{f.label}: <span className="font-num text-foreground">{f.value.toFixed(f.digits)} {f.unit}</span></div>)}
+              <p className="mt-2 text-[11px] text-muted-foreground">{STATUS_TEXT[e.thresholdStatus]} threshold</p>
+            </Card>
+          );
+        })}
       </div>
-      <Understanding tests={a.tests} age={context?.age ?? null} />
 
-      <h2 className="mt-8 text-xl font-semibold">Recommended Next Steps</h2>
-      <Card className="mt-3">
-        <ul className="space-y-1.5 text-sm">{a.nextSteps.map((n) => <li key={n}>• {n}</li>)}</ul>
-        {a.retest.length > 0 && <div className="mt-4"><Btn variant="secondary" onClick={() => s.start()}><RotateCcw className="h-4 w-4" /> Start a new assessment to retest</Btn></div>}
+      {/* 4. Crossing explanations */}
+      <Card className="mt-6">
+        <h2 className="font-semibold">Why each test was flagged or not</h2>
+        <ul className="mt-2 space-y-1 text-sm">{o.evaluations.map((e) => <li key={e.id}><b>{e.name}:</b> <span className="text-muted-foreground">{e.explanation}</span></li>)}</ul>
+        {crossedList.length === 0 && <p className="mt-2 text-sm text-muted-foreground">No thresholds were crossed.</p>}
       </Card>
-      <Notice className="mt-4">{CONSULTATION_GUIDANCE}</Notice>
-      <Notice className="mt-3">{MEDICAL_DISCLAIMER}</Notice>
+
+      {/* 5. Data quality */}
+      {quality.length > 0 && (
+        <Card className="mt-4">
+          <h2 className="flex items-center gap-2 font-semibold"><AlertTriangle className="h-5 w-5 text-warning" /> Data-quality notes</h2>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">{quality.map((q) => <li key={q}>• {q}</li>)}</ul>
+        </Card>
+      )}
+
+      {/* 6. Next step */}
+      <Card className="mt-4">
+        <h2 className="font-semibold">Recommended next step</h2>
+        <p className="mt-1">{o.nextStep}</p>
+      </Card>
+
+      {/* 7–8. Actions */}
       <div className="mt-6 flex flex-wrap justify-end gap-3">
-        <Btn variant="secondary" onClick={() => s.go("details")}><BarChart3 className="h-4 w-4" /> View detailed results</Btn>
-        <Btn variant="secondary" onClick={() => s.go("report")}><FileText className="h-4 w-4" /> Preview report</Btn>
-        <Btn onClick={() => s.go("complete")}>Finish</Btn>
+        <Btn variant="ghost" onClick={() => s.go("details")}><BarChart3 className="h-4 w-4" /> Measurement details</Btn>
+        <DownloadBtn />
+        <Btn variant="secondary" onClick={() => s.endSession("welcome")}><RotateCcw className="h-4 w-4" /> Start new session</Btn>
       </div>
     </Page>
   );

@@ -1,5 +1,5 @@
 import { LIMITATIONS, type Summary } from "./quality";
-import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL_DISCLAIMER, SCORE_LABEL } from "./scoring";
+import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL_DISCLAIMER } from "./scoring";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "./context";
 import { compareWithReference, nextStepFor, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS } from "./interpretation";
 import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, REFERRAL_RULE, STATUS_TEXT, THRESHOLDS } from "./thresholds";
