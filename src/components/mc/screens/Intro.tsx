@@ -45,6 +45,17 @@ export function WelcomeScreen() {
             <input type="checkbox" className="h-5 w-5 accent-[var(--warning)]" checked={s.session.demo} onChange={(e) => s.setDemo(e.target.checked)} />
             Developer demo mode (synthetic data, for presentations only)
           </label>
+          <div className="mt-6 rounded-2xl border border-dashed border-border p-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-warning">Competition demo · simulated data</div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {(Object.keys(DEMO_PROFILES) as DemoProfileId[]).map((id) => (
+                <Btn key={id} variant="secondary" className="h-auto flex-col items-start py-3 text-left" onClick={() => s.loadDemoProfile(id)}>
+                  <span>{DEMO_PROFILES[id].label}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{DEMO_PROFILES[id].description}</span>
+                </Btn>
+              ))}
+            </div>
+          </div>
         </div>
         <img src={figure} alt="" width={1024} height={1024} className="mx-auto w-full max-w-md rounded-3xl opacity-90 [mask-image:radial-gradient(circle,black_55%,transparent_75%)]" />
       </section>
