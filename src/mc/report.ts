@@ -2,13 +2,15 @@ import { LIMITATIONS, type Summary } from "./quality";
 import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL_DISCLAIMER, SCORE_LABEL } from "./scoring";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "./context";
 import { compareWithReference, nextStepFor, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS } from "./interpretation";
+import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, REFERRAL_RULE, STATUS_TEXT, THRESHOLDS } from "./thresholds";
+import { DEMO_PROFILES, type DemoProfileId } from "./demoProfiles";
 import { fmtValue, QUALITY_LABEL, type TestResult } from "./types";
 
 const clean = (s: string) =>
   s.replace(/²/g, "^2").replace(/[—–]/g, "-").replace(/…/g, "...").replace(/°/g, " deg")
     .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[^\x20-\x7E]/g, "");
 
-export interface ReportInput { id: string; startedAt: Date; demo: boolean; context?: AssessmentContext | null; results: TestResult[]; summary: Summary }
+export interface ReportInput { id: string; startedAt: Date; demo: boolean; context?: AssessmentContext | null; results: TestResult[]; summary: Summary; demoProfile?: DemoProfileId | undefined }
 
 export async function buildReportPdf(r: ReportInput): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
@@ -29,22 +31,22 @@ export async function buildReportPdf(r: ReportInput): Promise<Blob> {
     y += h;
   };
 
-  doc.setFillColor(11, 27, 43);
+  doc.setFillColor(29, 78, 216);
   doc.rect(0, 0, W, 30, "F");
-  doc.setFillColor(36, 221, 245);
+  doc.setFillColor(191, 219, 254);
   doc.rect(0, 30, W, 1.2, "F");
   doc.setTextColor(243, 247, 252);
   doc.setFont("helvetica", "bold"); doc.setFontSize(18);
-  doc.text("Tremor", M, 14);
+  doc.text("Tremor by Kinetiq", M, 14);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-  doc.text("Team Kinetiq", W - M, 14, { align: "right" });
+  doc.text("Screening Report", W - M, 14, { align: "right" });
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-  doc.text(r.demo ? "Movement Assessment Report - DEMO (synthetic data)" : "Movement Assessment Report - experimental prototype", M, 22);
+  doc.text(r.demo ? "SIMULATED DEMO DATA - not real measurements" : "Measured data - experimental prototype", M, 22);
   y = 40;
 
   text(`Date: ${r.startedAt.toLocaleString()}`, 10);
   text(`Anonymous session ID: ${r.id}`, 10);
-  if (r.demo) text("DEMO MODE: all values below are synthetic and are NOT real measurements.", 10, true, [180, 83, 9]);
+  text(`Data source: ${r.demo ? `SIMULATED DEMO DATA${r.demoProfile ? ` (${DEMO_PROFILES[r.demoProfile].label})` : ""}` : "Measured on this device"}`, 10, true, r.demo ? [180, 83, 9] : ink);
   y += 3;
   text("Assessment context", 13, true);
   text(`Age: ${r.context ? r.context.age : "Not recorded"}`, 10);
@@ -52,11 +54,21 @@ export async function buildReportPdf(r: ReportInput): Promise<Blob> {
   contextNotes(r.context ?? null).forEach((n) => text(n, 9, false, muted));
   y += 3;
   const A = assessResults(r.results);
-  text("Assessment summary", 13, true);
-  text(`Status: ${A.statusLabel}`, 11, true);
-  text(`${SCORE_LABEL}: ${fmtScore(A.average)}${A.average != null && A.status === "incomplete" ? " (partial average - assessment incomplete)" : ""}`, 11, true);
-  text(`Tests included: ${A.eligibleCount} of ${A.totalCount}  |  Excluded: ${A.excluded.length}`, 10);
-  text(A.interpretation, 10, false, muted);
+  const O = evaluateScreening(A.tests, r.context?.age ?? null);
+  text("Overall screening outcome", 13, true);
+  text(O.title, 14, true, O.kind === "referral" ? [185, 28, 28] : ink);
+  text(O.message, 10);
+  text(`Tests assessed: ${O.assessed} of ${O.total}  |  Thresholds crossed: ${O.crossed}  |  Referral rule: ${REFERRAL_RULE.minCrossings}+ crossings (min. ${REFERRAL_RULE.minAssessed} valid tests)`, 10, true);
+  text(`Recommended next step: ${O.nextStep}`, 10);
+  text(EXPERIMENTAL_NOTE, 9, false, muted);
+  y += 3;
+  text("Threshold evaluation", 13, true);
+  O.evaluations.forEach((e) => {
+    const c = THRESHOLDS[e.id];
+    text(`${e.name}: ${e.score != null ? `${Math.round(e.score)}/100` : "No score"}  |  Threshold ${e.threshold} (${COMPARISON_TEXT[e.comparison].toLowerCase()})  |  ${CROSSING_TEXT[e.status]}`, 10, true);
+    text(`${e.explanation}${e.limitedQuality ? " Limited data quality." : ""}`, 9);
+    text(`Threshold status: ${STATUS_TEXT[c.status]}. ${c.rationale}`, 8.5, false, muted);
+  });
   y += 3;
   text("Individual test results", 13, true);
   A.tests.forEach((t) => {
@@ -138,7 +150,7 @@ export async function buildReportPdf(r: ReportInput): Promise<Blob> {
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFontSize(8); doc.setTextColor(...muted);
-    doc.text(clean(`Tremor | Developed by Kinetiq  -  ${r.id}  -  Not a medical diagnosis  -  Page ${i}/${pages}`), M, 290);
+    doc.text(clean(`Tremor | Developed by Kinetiq  -  ${r.id}${r.demo ? "  -  SIMULATED DEMO DATA" : ""}  -  Page ${i}/${pages}`), M, 290);
   }
   return doc.output("blob");
 }
