@@ -11,7 +11,7 @@ import { assessResults, CONSULTATION_GUIDANCE, EXCLUSION_TEXT, fmtScore, MEDICAL
 import { analyzeSpiral } from "@/mc/spiral";
 import { analyzeTap } from "@/mc/tap";
 import { caffeineSummary, contextNotes, type AssessmentContext } from "@/mc/context";
-import { compareWithReference, nextStepFor, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS, type ReferenceComparison } from "@/mc/interpretation";
+import { compareWithReference, nextStepFor, normalScoreComparison, NORMAL_SCORE_NOTE, NORMAL_SCORE_TITLE, NORMAL_SCORE_UNAVAILABLE, qualityText, REFERENCE_UNAVAILABLE_TITLE, TEST_EXPLANATIONS, type ReferenceComparison } from "@/mc/interpretation";
 import { COMPARISON_TEXT, CROSSING_TEXT, evaluateScreening, EXPERIMENTAL_NOTE, STATUS_TEXT } from "@/mc/thresholds";
 import { DEMO_PROFILES } from "@/mc/demoProfiles";
 import { fmtValue, QUALITY_LABEL, TEST_NAMES, type TestResult } from "@/mc/types";
@@ -211,6 +211,31 @@ function Understanding({ tests, age }: { tests: TestScore[]; age: number | null 
   );
 }
 
+function NormalScoreComparison({ tests }: { tests: TestScore[] }) {
+  return (
+    <section className="mt-8" aria-labelledby="normal-score-heading">
+      <h2 id="normal-score-heading" className="text-xl font-semibold">{NORMAL_SCORE_TITLE}</h2>
+      <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{NORMAL_SCORE_NOTE}</p>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border text-muted-foreground">
+            <tr><th scope="col" className="py-3 pr-4">Test</th><th scope="col" className="py-3 pr-4">Your score</th><th scope="col" className="py-3 pr-4">Validated normal score</th><th scope="col" className="py-3">Simulated control-like example</th></tr>
+          </thead>
+          <tbody>{normalScoreComparison(tests).map((row) => (
+            <tr key={row.id} className="border-b border-border">
+              <th scope="row" className="py-3 pr-4 font-medium">{row.name}</th>
+              <td className="py-3 pr-4 font-num">{fmtScore(row.score)}</td>
+              <td className="py-3 pr-4 text-muted-foreground">{NORMAL_SCORE_UNAVAILABLE}</td>
+              <td className="py-3 font-num">{fmtScore(row.exampleScore)}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">All scores use each test’s experimental 0–100 scale. Matching the example does not establish health; differing from it does not establish disease.</p>
+    </section>
+  );
+}
+
 export function ResultsScreen() {
   const s = useSession();
   const { results, summary, startedAt, demo, context, demoProfile } = s.session;
@@ -271,6 +296,8 @@ export function ResultsScreen() {
           );
         })}
       </div>
+
+      <NormalScoreComparison tests={a.tests} />
 
       {/* 4. Crossing explanations */}
       <Card className="mt-6">
@@ -357,6 +384,7 @@ export function ReportScreen() {
         <section className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
           {assessResults(results).tests.map((t) => <div key={t.id} className="flex justify-between border-b border-paper-border py-1"><span>{t.name}</span><span className="font-num">{fmtScore(t.score)}{t.exclusion ? ` — ${EXCLUSION_TEXT[t.exclusion]}` : ""}</span></div>)}
         </section>
+        <NormalScoreComparison tests={assessResults(results).tests} />
         {results.map((r) => (
           <section key={r.id} className="mt-5 border-t border-paper-border pt-4">
             <div className="flex items-center justify-between"><h2 className="font-semibold">{r.name}</h2><span className="text-sm text-paper-muted">{QUALITY_LABEL[r.status]}</span></div>

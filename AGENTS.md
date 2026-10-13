@@ -12,3 +12,4 @@
 ## Project rules
 - Screening thresholds, comparison direction and referral rule live only in `src/mc/thresholds.ts`; UI, report and demo all call `evaluateScreening` so outcomes stay deterministic and consistent.
 - Demo profiles supply feature values (not scores) so they pass through the real scoring pipeline.
+- Normal-score comparison content and rows live in `src/mc/interpretation.ts` and are shared by results and PDF; simulated control scores pass through `assessResults` and never affect screening decisions.
