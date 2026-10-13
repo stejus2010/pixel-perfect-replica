@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Screening thresholds, comparison direction and referral rule live only in `src/mc/thresholds.ts`; UI, report and demo all call `evaluateScreening` so outcomes stay deterministic and consistent.
+- Demo profiles supply feature values (not scores) so they pass through the real scoring pipeline.
